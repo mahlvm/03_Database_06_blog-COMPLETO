@@ -1,4 +1,6 @@
 from lib.post import Post
+from lib.comments import Comments
+from lib.tags import Tags
 
 class PostRepository:
 
@@ -30,3 +32,23 @@ class PostRepository:
             )
         return
     
+    def find_with_comments(self, post_id):
+        rows = self._connection.execute("SELECT * FROM posts JOIN comments ON posts.id = comments.post_id WHERE posts.id = %s", [post_id])
+        comments = []
+        for row in rows:
+            comment = Comments(row["id"], row["author_name"], row["post_id"])
+            comments.append(comment)
+        post = Post(rows[0]['post_id'], rows[0]['title'], rows[0]['content'], comments)
+        return post
+    
+    def find_by_tags(self, tag_name):
+        rows = self._connection.execute("SELECT * FROM tags JOIN posts_tags" \
+                " ON posts_tags.tag_id = tags.id JOIN posts" \
+                " ON posts_tags.post_id = posts.id" \
+                " WHERE tags.name = %s", [tag_name])
+        posts = []
+        for row in rows:
+            post = Post(row["id"], row["title"], row["content"])
+            posts.append(post)
+        tag = Tags(rows[0]['id'], rows[0]['name'], posts)
+        return tag
